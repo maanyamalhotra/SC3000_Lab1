@@ -190,10 +190,6 @@ def ucs_with_energy(G, Dist, Cost, start, goal, budget):
 
     return None, None, None
 
-#--------
-# TASK 3
-#--------
-
 # --------
 # TASK 3
 # --------
