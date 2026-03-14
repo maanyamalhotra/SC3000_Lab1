@@ -5,12 +5,29 @@ import json
 # Data Loading
 
 def load_json_file(filename):
-    #loading a dictionary from a JSON fil
+    """
+    Load and return data from a JSON file
+
+    Args:
+        filename (str): Path to the JSON file
+
+    Returns:
+        dict: Parsed JSON data as a Python dictionary
+    """
     with open(filename, "r", encoding = "utf-8") as f:
         return json.load(f)
     
 def load_data():
-    #load the required dictionaries 
+    """
+    Load all required graph-related data files
+
+    Returns:
+        tuple:
+            G (dict): Graph adjacency list
+            Coord (dict): Node coordinates
+            Dist (dict): Distance values for edges
+            Cost (dict): Energy cost values for edges
+    """
     G = load_json_file("G.json")
     Coord = load_json_file("Coord.json")
     Dist = load_json_file("Dist.json")
@@ -23,26 +40,74 @@ import math
 #helper functions
 
 def edge_key(u,v):
-    #dist and cost keys
+    """
+    Generates the dictionary key used for edge-based lookups.
+
+    Arguments:
+        u (str): Source node
+        v (str): Destination node
+
+    Returns:
+        str: Key representing the edge in the format 'u,v'
+    """
 
     return f"{u},{v}"
 
 def get_distance(Dist, u, v):
-    # return distance of edge (u,v)
+    """
+    Retrieve the distance associated with an edge.
+
+    Arguments:
+        Dist (dict): Dictionary containing edge distances.
+        u (str): Source node
+        v (str): Destination node
+
+    Returns:
+        float: Distance value for edge (u, v)
+    """
     return Dist[edge_key(u,v)]
 
 def get_cost(Cost, u, v):
-    #return energt cost of edge (u,v).
+    """
+    Retrieve the energy cost associated with an edge
+
+    Arguments:
+        Cost (dict): Dictionary containing energy costs
+        u (str): Source node
+        v (str): Destination node
+
+    Returns:
+        float: Energy cost for edge (u, v)
+    """
     return Cost[edge_key(u,v)]
 
 def heuristic(Coord, node, goal):
-    #straight-line distance from current node to goal node
+    """
+    Compute the straight-line/Euclidean distance heuristic.
+
+    Arguments:
+        Coord (dict): Dictionary mapping nodes to (x, y) coordinates
+        node (str): Current node
+        goal (str): Goal node
+
+    Returns:
+        float: Estimated distance from the current node to the goal.
+    """
     x1, y1 = Coord[node]
     x2, y2 = Coord[goal]
     return math.hypot(x2-x1, y2-y1)
 
 def reconstruct_path(parent, end_node):
-    #reconstruct path from start to end using parent dictionary
+    """
+    Reconstruct a path from the start node to the given end node
+
+    Arguments:
+        parent (dict): Dictionary mapping nodes to their parent nodes
+        end_node (str): The goal node
+
+    Returns:
+        list: Ordered list of nodes representing the path
+    """
     path = []
     current = end_node
 
@@ -54,7 +119,16 @@ def reconstruct_path(parent, end_node):
     return path
 
 def compute_total_energy(path, Cost):
-    #given a full node path, sum the energy cost
+    """
+    Compute the total energy cost for a given path
+
+    Arguments:
+        path (list): Sequence of nodes representing a path
+        Cost (dict): Dictionary containing energy costs for edges
+
+    Returns:
+        float: Total energy cost of the path
+    """
 
     total_energy = 0
     for i in range(len(path) - 1):
@@ -63,6 +137,15 @@ def compute_total_energy(path, Cost):
     return total_energy
 
 def format_path(path):
+    """
+    Convert a list of nodes into a formatted string representation
+
+    Arguments:
+        path (list): Sequence of nodes
+
+    Returns:
+        str: Path formatted as 'node1->...->nodeN'
+    """
     return "->".join(path)
 
 #--------
@@ -70,6 +153,12 @@ def format_path(path):
 #--------
 
 def dijkstra_shortest_path(G, Dist, Cost, start, goal):
+    """
+    Compute the shortest distance path using Dijkstra's algorithm.
+
+    The algorithm expands nodes based on the smallest accumulated
+    distance from the start node.
+    """
 
     # min-heap: expanding the node with smallest distance so far
     pq = [(0, start)]
@@ -129,6 +218,13 @@ def print_result(task_name, path, total_distance, total_energy):
 #--------
 
 def ucs_with_energy(G, Dist, Cost, start, goal, budget):
+    """
+    Perform Uniform Cost Search (UCS) with an energy constraint.
+
+    The algorithm searches for the minimum-distance path while ensuring
+    the total energy cost does not exceed the specified budget. States
+    that are dominated by better distance-energy combinations are pruned.
+    """
 
     pq = [(0, start, 0)]  # (distance_so_far, node, energy_used)
     parent = {(start, 0): None}
@@ -195,6 +291,14 @@ def ucs_with_energy(G, Dist, Cost, start, goal, budget):
 # --------
 
 def astar_with_energy(G, Coord, Dist, Cost, start, goal, budget):
+    """
+    Perform A* search with an energy constraint.
+
+    The algorithm uses a heuristic (Euclidean distance) to guide the search
+    towards the goal while ensuring the energy cost does not exceed the
+    specified budget. Dominated states are pruned to improve efficiency.
+    
+    """
     start_h = heuristic(Coord, start, goal)
     pq = [(start_h, 0, start, 0)]   # (f_score, g_score, node, energy_used)
 
@@ -262,6 +366,16 @@ def astar_with_energy(G, Coord, Dist, Cost, start, goal, budget):
     return None, None, None
 
 def run_part1():
+    """
+    Execute all three tasks for the graph search problem
+
+    Tasks performed:
+        1. Dijkstra's algorithm for shortest distance path
+        2. Uniform Cost Search with an energy constraint
+        3. A* search with heuristic guidance and energy constraint
+
+    The function loads graph data, runs each algorithm, and prints results
+    """
 
     start = "1"
     goal = "50"
