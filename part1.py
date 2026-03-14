@@ -37,6 +37,7 @@ Output:
 import heapq
 import math
 import json
+import time
 
 # Data Loading
 
@@ -69,9 +70,6 @@ def load_data():
     Dist = load_json_file("Dist.json")
     Cost = load_json_file("Cost.json")
     return G, Coord, Dist, Cost
-
-import heapq
-import math
 
 # Helper functions
 
