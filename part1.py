@@ -1,3 +1,39 @@
+"""
+SC3000/CZ3005 Lab Assignment 1 — Part 1: Graph Search Algorithms
+
+Problem:
+    Find optimal paths in a weighted directed graph from node "1" to node "50".
+
+Data Files:
+    G.json      : Graph adjacency list
+    Coord.json  : Node coordinates
+    Dist.json   : Edge distances
+    Cost.json   : Edge energy costs
+
+Tasks:
+    1. Shortest Path - Dijkstra's Algorithm
+       - Finds the path with  minimum total distance
+       - Energy cost is calculated once the shortest path is found
+
+    2. Uniform Cost Search with Energy Constraint
+       - Finds the shortest path while ensuring total energy cost does not exceed the given energy budget
+
+    3. A* Search with Energy Constraint
+       - Uses a heuristic to guide the search toward the goal
+       - Also enforces the energy budget constraint
+
+Constraints:
+    Start node: "1"
+    Goal node: "50"
+    Energy budget: 287932
+
+Output:
+    For each task, the program prints:
+        - The path from start to goal
+        - Total distance travelled
+        - Total energy cost of the path
+"""
+
 import heapq
 import math
 import json
@@ -37,7 +73,7 @@ def load_data():
 import heapq
 import math
 
-#helper functions
+# Helper functions
 
 def edge_key(u,v):
     """
@@ -187,7 +223,7 @@ def dijkstra_shortest_path(G, Dist, Cost, start, goal):
             total_energy = compute_total_energy(path, Cost)
             return path, dist_so_far, total_energy
         
-        #try relaxing all outgoing esges from u
+        #try relaxing all outgoing edges from u
         for v in G[u]:
             if v in visited:
                 continue
@@ -330,7 +366,7 @@ def astar_with_energy(G, Coord, Dist, Cost, start, goal, budget):
             new_dist = dist_so_far + edge_dist
             new_energy = energy_used + edge_cost
 
-            # Reject infeasible states
+            # Reject unfeasible states
             if new_energy > budget:
                 continue
 
