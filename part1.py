@@ -1,48 +1,160 @@
+"""
+SC3000/CZ3005 Lab Assignment 1 — Part 1: Graph Search Algorithms
+
+Problem:
+    Find optimal paths in a weighted directed graph from node "1" to node "50".
+
+Data Files:
+    G.json      : Graph adjacency list
+    Coord.json  : Node coordinates
+    Dist.json   : Edge distances
+    Cost.json   : Edge energy costs
+
+Tasks:
+    1. Shortest Path - Dijkstra's Algorithm
+       - Finds the path with minimum total distance
+       - Energy cost is calculated once the shortest path is found
+
+    2. Uniform Cost Search with Energy Constraint
+       - Finds the shortest path while ensuring total energy cost does not exceed the given energy budget
+
+    3. A* Search with Energy Constraint
+       - Uses a heuristic to guide the search toward the goal
+       - Also enforces the energy budget constraint
+
+Constraints:
+    Start node: "1"
+    Goal node: "50"
+    Energy budget: 287932
+
+Output:
+    For each task, the program prints:
+        - The path from start to goal
+        - Total distance travelled
+        - Total energy cost of the path
+        - Number of nodes expanded
+"""
+
 import heapq
 import math
 import json
 
+# -------------------
+# Constants
+# -------------------
+
+START_NODE = "1"
+GOAL_NODE = "50"
+ENERGY_BUDGET = 287932
+
 # Data Loading
 
 def load_json_file(filename):
-    #loading a dictionary from a JSON fil
-    with open(filename, "r", encoding = "utf-8") as f:
+    """
+    Load and return data from a JSON file
+
+    Args:
+        filename (str): Path to the JSON file
+
+    Returns:
+        dict: Parsed JSON data as a Python dictionary
+    """
+    with open(filename, "r", encoding="utf-8") as f:
         return json.load(f)
-    
+
+
 def load_data():
-    #load the required dictionaries 
+    """
+    Load all required graph-related data files
+
+    Returns:
+        tuple:
+            G (dict): Graph adjacency list
+            Coord (dict): Node coordinates
+            Dist (dict): Distance values for edges
+            Cost (dict): Energy cost values for edges
+    """
     G = load_json_file("G.json")
     Coord = load_json_file("Coord.json")
     Dist = load_json_file("Dist.json")
     Cost = load_json_file("Cost.json")
     return G, Coord, Dist, Cost
 
-import heapq
-import math
 
-#helper functions
+# Helper functions
 
-def edge_key(u,v):
-    #dist and cost keys
+def edge_key(u, v):
+    """
+    Generate the dictionary key used for edge-based lookups.
 
+    Arguments:
+        u (str): Source node
+        v (str): Destination node
+
+    Returns:
+        str: Key representing the edge in the format 'u,v'
+    """
     return f"{u},{v}"
 
+
 def get_distance(Dist, u, v):
-    # return distance of edge (u,v)
-    return Dist[edge_key(u,v)]
+    """
+    Retrieve the distance associated with an edge.
+
+    Arguments:
+        Dist (dict): Dictionary containing edge distances
+        u (str): Source node
+        v (str): Destination node
+
+    Returns:
+        float: Distance value for edge (u, v)
+    """
+    return Dist[edge_key(u, v)]
+
 
 def get_cost(Cost, u, v):
-    #return energt cost of edge (u,v).
-    return Cost[edge_key(u,v)]
+    """
+    Retrieve the energy cost associated with an edge
+
+    Arguments:
+        Cost (dict): Dictionary containing energy costs
+        u (str): Source node
+        v (str): Destination node
+
+    Returns:
+        float: Energy cost for edge (u, v)
+    """
+    return Cost[edge_key(u, v)]
+
 
 def heuristic(Coord, node, goal):
-    #straight-line distance from current node to goal node
+    """
+    Compute the straight-line/Euclidean distance heuristic.
+
+    Arguments:
+        Coord (dict): Dictionary mapping nodes to (x, y) coordinates
+        node (str): Current node
+        goal (str): Goal node
+
+    Returns:
+        float: Estimated distance from the current node to the goal
+    """
     x1, y1 = Coord[node]
     x2, y2 = Coord[goal]
-    return math.hypot(x2-x1, y2-y1)
+    return math.hypot(x2 - x1, y2 - y1)
+
 
 def reconstruct_path(parent, end_node):
-    #reconstruct path from start to end using parent dictionary
+    """
+    Reconstruct a path from the start node to the given end node
+
+    Arguments:
+        parent (dict): Dictionary mapping nodes to their parent nodes
+        end_node (str): The goal node
+
+    Returns:
+        list: Ordered list of nodes representing the path
+    """
     path = []
     current = end_node
 
@@ -53,35 +165,62 @@ def reconstruct_path(parent, end_node):
     path.reverse()
     return path
 
-def compute_total_energy(path, Cost):
-    #given a full node path, sum the energy cost
 
+def compute_total_energy(path, Cost):
+    """
+    Compute the total energy cost for a given path
+
+    Arguments:
+        path (list): Sequence of nodes representing a path
+        Cost (dict): Dictionary containing energy costs for edges
+
+    Returns:
+        float: Total energy cost of the path
+    """
     total_energy = 0
     for i in range(len(path) - 1):
-        total_energy += get_cost(Cost, path[i], path[i+1])
+        total_energy += get_cost(Cost, path[i], path[i + 1])
 
     return total_energy
 
+
 def format_path(path):
+    """
+    Convert a list of nodes into a formatted string representation
+
+    Arguments:
+        path (list): Sequence of nodes
+
+    Returns:
+        str: Path formatted as 'node1->...->nodeN'
+    """
     return "->".join(path)
 
-#--------
+
+# --------
 # TASK 1
-#--------
+# --------
 
 def dijkstra_shortest_path(G, Dist, Cost, start, goal):
+    """
+    Compute the shortest distance path using Dijkstra's algorithm.
 
+    The algorithm expands nodes based on the smallest accumulated
+    distance from the start node.
+    """
     # min-heap: expanding the node with smallest distance so far
     pq = [(0, start)]
 
     # best_dist[node] = shortest distance found so far to this node
     best_dist = {start: 0}
 
-    #parent[node] = previous node in the best path
+    # parent[node] = previous node in the best path
     parent = {start: None}
 
-    #visited = stores nodes whose shortest distance is finalised 
+    # visited = stores nodes whose shortest distance is finalised
     visited = set()
+
+    nodes_expanded = 0
 
     while pq:
         dist_so_far, u = heapq.heappop(pq)
@@ -90,15 +229,16 @@ def dijkstra_shortest_path(G, Dist, Cost, start, goal):
         if u in visited:
             continue
 
+        nodes_expanded += 1
         visited.add(u)
 
-        #if we reached the goal, reconstruct and return the path
+        # if we reached the goal, reconstruct and return the path
         if u == goal:
             path = reconstruct_path(parent, goal)
             total_energy = compute_total_energy(path, Cost)
-            return path, dist_so_far, total_energy
-        
-        #try relaxing all outgoing esges from u
+            return path, dist_so_far, total_energy, nodes_expanded
+
+        # try relaxing all outgoing edges from u
         for v in G[u]:
             if v in visited:
                 continue
@@ -107,29 +247,39 @@ def dijkstra_shortest_path(G, Dist, Cost, start, goal):
 
             # if this path is better, then update
             if new_dist < best_dist.get(v, float("inf")):
-                best_dist[v]= new_dist
+                best_dist[v] = new_dist
                 parent[v] = u
                 heapq.heappush(pq, (new_dist, v))
-    
-    return None, None, None
 
-def print_result(task_name, path, total_distance, total_energy):
+    return None, None, None, nodes_expanded
+
+
+def print_result(task_name, path, total_distance, total_energy, nodes_expanded):
     print(f"\n{task_name}")
 
     if path is None:
         print("No path found.")
+        print(f"Nodes expanded: {nodes_expanded}")
         return
-    print(f"Shortest path: {format_path(path)} ")
+
+    print(f"Shortest path: {format_path(path)}")
     print(f"Shortest distance: {total_distance}")
     print(f"Total energy cost: {total_energy}")
+    print(f"Nodes expanded: {nodes_expanded}")
 
 
-#--------
+# --------
 # TASK 2
-#--------
+# --------
 
 def ucs_with_energy(G, Dist, Cost, start, goal, budget):
+    """
+    Perform Uniform Cost Search (UCS) with an energy constraint.
 
+    The algorithm searches for the minimum-distance path while ensuring
+    the total energy cost does not exceed the specified budget. States
+    that are dominated by better distance-energy combinations are pruned.
+    """
     pq = [(0, start, 0)]  # (distance_so_far, node, energy_used)
     parent = {(start, 0): None}
 
@@ -137,8 +287,11 @@ def ucs_with_energy(G, Dist, Cost, start, goal, budget):
     # (energy_used, distance_so_far)
     best_states = {start: [(0, 0)]}
 
+    nodes_expanded = 0
+
     while pq:
         dist_so_far, u, energy_used = heapq.heappop(pq)
+        nodes_expanded += 1
         current_state = (u, energy_used)
 
         if u == goal:
@@ -150,7 +303,7 @@ def ucs_with_energy(G, Dist, Cost, start, goal, budget):
             state_path.reverse()
 
             node_path = [state[0] for state in state_path]
-            return node_path, dist_so_far, energy_used
+            return node_path, dist_so_far, energy_used, nodes_expanded
 
         for v in G[u]:
             edge_dist = get_distance(Dist, u, v)
@@ -188,17 +341,21 @@ def ucs_with_energy(G, Dist, Cost, start, goal, budget):
             parent[next_state] = current_state
             heapq.heappush(pq, (new_dist, v, new_energy))
 
-    return None, None, None
+    return None, None, None, nodes_expanded
 
-#--------
-# TASK 3
-#--------
 
 # --------
 # TASK 3
 # --------
 
 def astar_with_energy(G, Coord, Dist, Cost, start, goal, budget):
+    """
+    Perform A* search with an energy constraint.
+
+    The algorithm uses a heuristic (Euclidean distance) to guide the search
+    towards the goal while ensuring the energy cost does not exceed the
+    specified budget. Dominated states are pruned to improve efficiency.
+    """
     start_h = heuristic(Coord, start, goal)
     pq = [(start_h, 0, start, 0)]   # (f_score, g_score, node, energy_used)
 
@@ -207,8 +364,11 @@ def astar_with_energy(G, Coord, Dist, Cost, start, goal, budget):
     # best_states[node] = list of non-dominated (energy_used, distance_so_far) pairs
     best_states = {start: [(0, 0)]}
 
+    nodes_expanded = 0
+
     while pq:
         f_score, dist_so_far, u, energy_used = heapq.heappop(pq)
+        nodes_expanded += 1
         current_state = (u, energy_used)
 
         # Goal test
@@ -221,7 +381,7 @@ def astar_with_energy(G, Coord, Dist, Cost, start, goal, budget):
 
             state_path.reverse()
             node_path = [state[0] for state in state_path]
-            return node_path, dist_so_far, energy_used
+            return node_path, dist_so_far, energy_used, nodes_expanded
 
         for v in G[u]:
             edge_dist = get_distance(Dist, u, v)
@@ -263,13 +423,23 @@ def astar_with_energy(G, Coord, Dist, Cost, start, goal, budget):
             new_f = new_dist + heuristic(Coord, v, goal)
             heapq.heappush(pq, (new_f, new_dist, v, new_energy))
 
-    return None, None, None
+    return None, None, None, nodes_expanded
+
 
 def run_part1():
+    """
+    Execute all three tasks for the graph search problem
 
-    start = "1"
-    goal = "50"
-    energy_budget = 287932
+    Tasks performed:
+        1. Dijkstra's algorithm for shortest distance path
+        2. Uniform Cost Search with an energy constraint
+        3. A* search with heuristic guidance and energy constraint
+
+    The function loads graph data, runs each algorithm, and prints results
+    """
+    start = START_NODE
+    goal = GOAL_NODE
+    energy_budget = ENERGY_BUDGET
 
     G, Coord, Dist, Cost = load_data()
 
@@ -279,13 +449,13 @@ def run_part1():
     print("Energy costs:", len(Cost))
 
     # Task 1
-    path1, dist1, energy1 = dijkstra_shortest_path(G, Dist, Cost, start, goal)
-    print_result("Task 1 Result", path1, dist1, energy1)
+    path1, dist1, energy1, nodes1 = dijkstra_shortest_path(G, Dist, Cost, start, goal)
+    print_result("Task 1 Result", path1, dist1, energy1, nodes1)
 
     # Task 2
-    path2, dist2, energy2 = ucs_with_energy(G, Dist, Cost, start, goal, energy_budget)
-    print_result("Task 2 Result", path2, dist2, energy2)
+    path2, dist2, energy2, nodes2 = ucs_with_energy(G, Dist, Cost, start, goal, energy_budget)
+    print_result("Task 2 Result", path2, dist2, energy2, nodes2)
 
     # Task 3
-    path3, dist3, energy3 = astar_with_energy(G, Coord, Dist, Cost, start, goal, energy_budget)
-    print_result("Task 3 Result", path3, dist3, energy3)
+    path3, dist3, energy3, nodes3 = astar_with_energy(G, Coord, Dist, Cost, start, goal, energy_budget)
+    print_result("Task 3 Result", path3, dist3, energy3, nodes3)
