@@ -15,7 +15,7 @@ This repository contains solutions for SC3000 Lab Assignment 1:
 - part1.py: Graph search algorithms
 - part2.py: Grid world MDP and RL algorithms
 - G.json, Coord.json, Dist.json, Cost.json: Graph data files
-- diagrams/: Helper scripts for plotting and analysis
+- diagrams: Helper scripts for plotting and analysis
 
 ## Requirements
 
