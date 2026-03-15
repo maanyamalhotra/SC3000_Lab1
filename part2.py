@@ -1,5 +1,5 @@
 """
-SC3000/CZ3005 Lab Assignment 1 — Part 2: Grid World MDP & Reinforcement Learning
+SC3000 Lab Assignment 1 — Part 2: Grid World MDP & Reinforcement Learning
 
 Environment:
     5x5 grid, start=(0,0), goal=(4,4)
@@ -16,6 +16,7 @@ Algorithms:
 """
 
 import random
+import time
 import numpy as np
 from collections import defaultdict
 
@@ -307,18 +308,24 @@ def monte_carlo_control(
             if done:
                 break
 
-        # MC update
+        # Compute discounted returns for every step (backward pass)
+        returns = [0.0] * len(episode)
         G = 0.0
-        visited = set()
         for t in reversed(range(len(episode))):
-            s_t, a_t, r_t = episode[t]
+            _, _, r_t = episode[t]
             G = gamma * G + r_t
+            returns[t] = G
+
+        # First-visit MC update: forward pass, update only the first occurrence of each (s,a)
+        visited = set()
+        for t in range(len(episode)):
+            s_t, a_t, _ = episode[t]
             sa = (s_t, a_t)
             if sa not in visited:
                 visited.add(sa)
                 returns_count[sa] += 1
                 # incremental mean update
-                Q[sa] += (G - Q[sa]) / returns_count[sa]
+                Q[sa] += (returns[t] - Q[sa]) / returns_count[sa]
 
     np.random.set_state(old_rng_state)  # restore
 
@@ -479,6 +486,7 @@ def compare_policies(policies, names):
 
 def run_part2():
     env = GridWorld()
+    timings = {}
 
     print("PART 2 - GRID WORLD MDP & REINFORCEMENT LEARNING")
     print(f"\n  Grid: {GRID_SIZE}x{GRID_SIZE}  |  Start: {START}  |  " f"Goal: {GOAL}")
@@ -489,15 +497,19 @@ def run_part2():
     print("\n" + "─" * 60)
     print("  Task 1a - Value Iteration (deterministic transitions)")
     print("─" * 60)
+    t0 = time.perf_counter()
     V_vi, pi_vi = value_iteration(env)
+    timings["value_iteration"] = time.perf_counter() - t0
     print_value_function(V_vi, "Value Function (Value Iteration)")
     print_policy(pi_vi, "Optimal Policy (Value Iteration)")
 
     # 1b
     print("\n" + "─" * 60)
-    print("  Task 1b — Policy Iteration (deterministic transitions)")
+    print("  Task 1b - Policy Iteration (deterministic transitions)")
     print("─" * 60)
+    t0 = time.perf_counter()
     V_pi, pi_pi = policy_iteration(env)
+    timings["policy_iteration"] = time.perf_counter() - t0
     print_value_function(V_pi, "Value Function (Policy Iteration)")
     print_policy(pi_pi, "Optimal Policy (Policy Iteration)")
 
@@ -509,7 +521,9 @@ def run_part2():
     print("\n" + "─" * 60)
     print("  Task 2 — Monte Carlo Control (stochastic, ε-greedy)")
     print("─" * 60)
+    t0 = time.perf_counter()
     Q_mc, pi_mc, ep_mc = monte_carlo_control(env)
+    timings["monte_carlo"] = time.perf_counter() - t0
     V_mc = q_to_v(Q_mc, env.states)
     print_value_function(V_mc, "Value Function (Monte Carlo)")
     print_policy(pi_mc, "Learned Policy (Monte Carlo)")
@@ -518,7 +532,9 @@ def run_part2():
     print("\n" + "─" * 60)
     print("  Task 3 — Q-Learning (stochastic, ε-greedy)")
     print("─" * 60)
+    t0 = time.perf_counter()
     Q_ql, pi_ql, ep_ql = q_learning(env)
+    timings["q_learning"] = time.perf_counter() - t0
     V_ql = q_to_v(Q_ql, env.states)
     print_value_function(V_ql, "Value Function (Q-Learning)")
     print_policy(pi_ql, "Learned Policy (Q-Learning)")
@@ -528,6 +544,13 @@ def run_part2():
     print("  Overall Policy Comparison")
     print("─" * 60)
     compare_policies([pi_vi, pi_pi, pi_mc, pi_ql], ["VI", "PI", "MC", "QL"])
+
+    print("\n  Runtime Summary")
+    print("  " + "-" * 46)
+    print(f"  Value Iteration:   {timings['value_iteration']:.4f} s")
+    print(f"  Policy Iteration:  {timings['policy_iteration']:.4f} s")
+    print(f"  Monte Carlo:       {timings['monte_carlo']:.4f} s")
+    print(f"  Q-Learning:        {timings['q_learning']:.4f} s")
 
     return {
         "value_iteration": (V_vi, pi_vi),
