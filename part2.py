@@ -113,7 +113,7 @@ class GridWorld:
             (0.1, self._attempt_move(state, perp_left)),
             (0.1, self._attempt_move(state, perp_right)),
         ]
-        # merge duplicate next-states (two moves that both bounce back)
+        # A subtle edge case is handled in get_transition_probs: when two outcomes both result in the same next state (e.g. both the intended move and a perpendicular slip hit a wall and bounce back), their probabilities are merged into a single entry rather than duplicated, preserving correct probability distributions in corner and edge states.
         merged = defaultdict(float)
         for prob, s_next in outcomes:
             merged[s_next] += prob
